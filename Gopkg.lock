@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:55a66afde7da8d53f46f7f3e495f1bc22a497e99c62ec5e19ee1a0186ddc4232"
+  digest = "1:b365b973e4699033e1545ceba6650c6e31aec12c60fca4247c97e920535c0c2c"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -39,6 +39,7 @@
     "private/protocol/restjson",
     "private/protocol/xml/xmlutil",
     "service/batch",
+    "service/cloudwatchlogs",
     "service/sts",
     "service/sts/stsiface",
   ]
@@ -84,6 +85,7 @@
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/batch",
+    "github.com/aws/aws-sdk-go/service/cloudwatchlogs",
     "github.com/spf13/cobra",
   ]
   solver-name = "gps-cdcl"

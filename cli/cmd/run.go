@@ -17,17 +17,13 @@ var (
 	runJobParameters []string
 	runEnvironment   []string
 	runJobTimeout    int
+	runJobRetries    int
+	runFollowFlag    bool
 )
 
 var runCmd = &cobra.Command{
 	Use: "run",
 	Run: func(cmd *cobra.Command, args []string) {
-		sess := batch.InitAwsSession()
-
-		batchCli := &batch.BatchCli{
-			Session: sess,
-		}
-
 		if runJobName == "" {
 			runJobName = runJobDefinition
 		}
@@ -51,6 +47,7 @@ var runCmd = &cobra.Command{
 			Queue:       runJobQueue,
 			Parameters:  params,
 			Environment: envs,
+			Retries:     runJobRetries,
 		}
 
 		jobID, err := batchCli.SubmitJob(request)
@@ -60,6 +57,10 @@ var runCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Job ID: %s\n", jobID)
+
+		if runFollowFlag {
+			followJob(jobID)
+		}
 	},
 }
 
@@ -67,9 +68,11 @@ func init() {
 	runCmd.Flags().StringVarP(&runJobName, "name", "", "", "Job name. Leave blank to autogenerate")
 	runCmd.Flags().StringVarP(&runJobQueue, "queue", "q", "", "Queue")
 	runCmd.Flags().StringVarP(&runJobDefinition, "job", "j", "", "Job Definition")
-	runCmd.Flags().StringArrayVarP(&runJobParameters, "parameters", "p", []string{}, "")
+	runCmd.Flags().StringArrayVarP(&runJobParameters, "parameter", "p", []string{}, "")
 	runCmd.Flags().StringArrayVarP(&runEnvironment, "env", "e", []string{}, "")
 	runCmd.Flags().IntVarP(&runJobTimeout, "timeout", "", 0, "Timeout")
+	runCmd.Flags().IntVarP(&runJobRetries, "num-retries", "r", 0, "Job retries")
+	runCmd.Flags().BoolVarP(&runFollowFlag, "follow", "f", false, "Follow job log")
 
 	runCmd.MarkFlagRequired("queue")
 	runCmd.MarkFlagRequired("job")

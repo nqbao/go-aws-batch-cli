@@ -14,6 +14,7 @@ type SubmitRequest struct {
 	Parameters  map[string]*string
 	Environment map[string]string
 	Timeout     int
+	Retries     int
 }
 
 type BatchCli struct {
@@ -34,6 +35,12 @@ func (b *BatchCli) SubmitJob(request *SubmitRequest) (string, error) {
 	if request.Timeout > 0 {
 		input.Timeout = &batch.JobTimeout{
 			AttemptDurationSeconds: aws.Int64(int64(request.Timeout)),
+		}
+	}
+
+	if request.Retries > 0 {
+		input.RetryStrategy = &batch.RetryStrategy{
+			Attempts: aws.Int64(int64(request.Retries)),
 		}
 	}
 
