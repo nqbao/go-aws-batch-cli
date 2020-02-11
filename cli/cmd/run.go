@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"strings"
 
@@ -76,4 +77,26 @@ func init() {
 
 	runCmd.MarkFlagRequired("queue")
 	runCmd.MarkFlagRequired("job")
+}
+
+func followJob(jobId string) {
+	follower := batchCli.FollowJob(jobId)
+
+	running := true
+	for running {
+		select {
+		case msg := <-follower.Logging:
+			fmt.Println(msg)
+
+		case status := <-follower.Status:
+			fmt.Printf("Status: %v\n", status)
+
+		case err := <-follower.Error:
+			if err != io.EOF {
+				fmt.Printf("Error: %v", err)
+			}
+
+			running = false
+		}
+	}
 }

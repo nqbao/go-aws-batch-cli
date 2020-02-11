@@ -75,6 +75,12 @@ func (b *BatchCli) FollowJob(jobID string) *JobFollower {
 			<-time.After(1000 * time.Millisecond)
 		}
 
+		// give it 1s to finish
+		if logFollower != nil {
+			<-time.After(1 * time.Second)
+			logFollower.Terminate <- true
+		}
+
 		// clean up
 		close(follower.Logging)
 		follower.Error <- io.EOF
@@ -85,9 +91,9 @@ func (b *BatchCli) FollowJob(jobID string) *JobFollower {
 }
 
 func (b *BatchCli) followRunningJobStream(follower *JobFollower, stream string) *LogFollower {
-	fmt.Printf(">> Start log stream %v\n", stream)
+	// fmt.Printf(">> Start log stream %v\n", stream)
 
-	ff := FollowCloudWatchLog(b.Session, "/aws/batch/job", stream)
+	ff := FollowCloudWatchLog(b.Session, "/aws/batch/job", stream, true)
 
 	go func() {
 		for {

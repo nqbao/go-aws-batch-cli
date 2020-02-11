@@ -3,6 +3,9 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"log"
+
+	"github.com/nqbao/go-aws-batch-cli/batch"
 
 	"github.com/spf13/cobra"
 )
@@ -14,47 +17,37 @@ var (
 var logCmd = &cobra.Command{
 	Use: "log",
 	Run: func(cmd *cobra.Command, args []string) {
-		followJob(logJobId)
+		job, err := batchCli.GetJob(logJobId)
+
+		if err != nil {
+			log.Fatalf("Can not find job: %v", err)
+		}
+
+		if *job.Status != "SUCCEEDED" && *job.Status != "FAILED" {
+			log.Fatalf("Invalid job status: %v", *job.Status)
+		}
+
+		attempt := job.Attempts[len(job.Attempts)-1]
+
+		follower := batch.FollowCloudWatchLog(awsSession, "/aws/batch/job", *attempt.Container.LogStreamName, false)
+
+		running := true
+		for running {
+			select {
+			case msg := <-follower.Out:
+				fmt.Println(msg)
+			case err := <-follower.Error:
+				if err != io.EOF {
+					log.Fatalf("Error while retriving log stream: %v", err)
+				}
+
+				running = false
+			}
+		}
 	},
 }
 
 func init() {
-	logCmd.Flags().StringVarP(&logJobId, "job", "j", "", "Job ID")
-	logCmd.MarkFlagRequired("job")
-}
-
-func followJob(jobId string) {
-	// follower := batch.FollowCloudWatchLog(awsSession, "/aws/batch/job", "hussmann-scoring/default/8ec60ff9-6e6a-4cc1-86f9-0cd6f70e7c92")
-
-	// for msg := range follower.Out {
-	// 	fmt.Println(msg)
-	// 	break
-	// }
-
-	// select {
-	// case err := <-follower.Err:
-	// 	fmt.Printf("%v", err)
-	// default:
-	// 	// no error
-	// }
-
-	follower := batchCli.FollowJob(jobId)
-
-	running := true
-	for running {
-		select {
-		case msg := <-follower.Logging:
-			fmt.Println(msg)
-
-		case status := <-follower.Status:
-			fmt.Printf("Status: %v\n", status)
-
-		case err := <-follower.Error:
-			if err != io.EOF {
-				fmt.Printf("Error: %v", err)
-			}
-
-			running = false
-		}
-	}
+	logCmd.Flags().StringVarP(&logJobId, "id", "i", "", "Job ID")
+	logCmd.MarkFlagRequired("id")
 }
