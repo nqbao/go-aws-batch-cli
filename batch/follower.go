@@ -3,7 +3,6 @@ package batch
 import (
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -41,24 +40,13 @@ func (b *BatchCli) FollowJob(jobID string) *JobFollower {
 					follower.Status <- *job.Status
 
 					if newStatus == "RUNNING" {
-						runningContainer, err := b.GetRunningContainer(jobID)
-
-						if err != nil {
-							follower.Error <- fmt.Errorf("Unable to locate running container: %v", err)
-							break
-						}
-
-						bits := strings.Split(*job.JobDefinition, "/")
-						bits = strings.Split(bits[len(bits)-1], ":")
-						streamName := fmt.Sprintf("%v/%v", bits[0], runningContainer)
-
 						go func(streamName string) {
 							if logFollower != nil {
 								logFollower.Terminate <- true
 							}
 
 							logFollower = b.followRunningJobStream(follower, streamName)
-						}(streamName)
+						}(*job.Container.LogStreamName)
 					}
 				}
 
