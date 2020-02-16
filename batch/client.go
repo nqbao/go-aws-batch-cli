@@ -1,6 +1,8 @@
 package batch
 
 import (
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/batch"
@@ -11,10 +13,19 @@ type SubmitRequest struct {
 	Name        string
 	Queue       string
 	Definition  string
+	Command     []string
 	Parameters  map[string]*string
 	Environment map[string]string
 	Timeout     int
 	Retries     int
+}
+
+func (s *SubmitRequest) SetCommandString(cmd string) {
+	if cmd == "" {
+		s.Command = nil
+	} else {
+		s.Command = strings.Split(cmd, " ")
+	}
 }
 
 type BatchCli struct {
@@ -41,6 +52,14 @@ func (b *BatchCli) SubmitJob(request *SubmitRequest) (string, error) {
 	if request.Retries > 0 {
 		input.RetryStrategy = &batch.RetryStrategy{
 			Attempts: aws.Int64(int64(request.Retries)),
+		}
+	}
+
+	if len(request.Command) > 0 {
+		input.ContainerOverrides.Command = []*string{}
+
+		for _, c := range request.Command {
+			input.ContainerOverrides.Command = append(input.ContainerOverrides.Command, aws.String(c))
 		}
 	}
 

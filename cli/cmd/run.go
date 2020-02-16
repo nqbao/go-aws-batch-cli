@@ -20,6 +20,7 @@ var (
 	runJobTimeout    int
 	runJobRetries    int
 	runFollowFlag    bool
+	runCommand       string
 )
 
 var runCmd = &cobra.Command{
@@ -51,6 +52,8 @@ var runCmd = &cobra.Command{
 			Retries:     runJobRetries,
 		}
 
+		request.SetCommandString(runCommand)
+
 		jobID, err := batchCli.SubmitJob(request)
 
 		if err != nil {
@@ -69,6 +72,7 @@ func init() {
 	runCmd.Flags().StringVarP(&runJobName, "name", "", "", "Job name. Leave blank to autogenerate")
 	runCmd.Flags().StringVarP(&runJobQueue, "queue", "q", "", "Queue")
 	runCmd.Flags().StringVarP(&runJobDefinition, "job", "j", "", "Job Definition")
+	runCmd.Flags().StringVarP(&runCommand, "command", "c", "", "Override container command")
 	runCmd.Flags().StringArrayVarP(&runJobParameters, "parameter", "p", []string{}, "")
 	runCmd.Flags().StringArrayVarP(&runEnvironment, "env", "e", []string{}, "")
 	runCmd.Flags().IntVarP(&runJobTimeout, "timeout", "", 0, "Timeout")
