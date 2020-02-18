@@ -14,11 +14,18 @@ func InitAwsSession() *session.Session {
 		region = os.Getenv("AWS_REGION")
 	}
 
-	sess := session.Must(session.NewSession(
-		&aws.Config{
+	profile := os.Getenv("AWS_PROFILE")
+	if profile == "" {
+		profile = "default"
+	}
+
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{
 			Region: aws.String(region),
 		},
-	))
+		Profile:           profile,
+		SharedConfigState: session.SharedConfigEnable,
+	}))
 
 	return sess
 }
