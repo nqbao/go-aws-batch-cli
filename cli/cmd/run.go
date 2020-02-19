@@ -23,10 +23,9 @@ var (
 )
 
 var runCmd = &cobra.Command{
-	Use: "run",
+	Use:  "run",
+	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%v\n", args)
-
 		params := make(map[string]string)
 		envs := make(map[string]string)
 
@@ -59,7 +58,11 @@ var runCmd = &cobra.Command{
 			Retries:     runJobRetries,
 		}
 
-		request.SetCommandString(runCommand)
+		if runCommand != "" {
+			request.SetCommandString(runCommand)
+		} else if len(args) > 0 {
+			request.Command = args
+		}
 
 		jobID, err := batchCli.SubmitJob(request)
 
