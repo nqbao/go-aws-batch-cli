@@ -6,7 +6,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/nqbao/go-aws-batch-cli/batch"
 	"github.com/spf13/cobra"
 )
@@ -26,21 +25,29 @@ var (
 var runCmd = &cobra.Command{
 	Use: "run",
 	Run: func(cmd *cobra.Command, args []string) {
-		if runJobName == "" {
-			runJobName = runJobDefinition
-		}
+		fmt.Printf("%v\n", args)
 
-		params := make(map[string]*string)
+		params := make(map[string]string)
 		envs := make(map[string]string)
 
 		for _, paramStr := range runJobParameters {
 			bits := strings.SplitN(paramStr, "=", 2)
-			params[bits[0]] = aws.String(bits[1])
+
+			if len(bits) == 2 {
+				params[bits[0]] = bits[1]
+			} else {
+				params[bits[0]] = bits[0]
+			}
 		}
 
 		for _, envStr := range runEnvironment {
 			bits := strings.SplitN(envStr, "=", 2)
-			envs[bits[0]] = bits[1]
+
+			if len(bits) == 2 {
+				envs[bits[0]] = bits[1]
+			} else {
+				envs[bits[0]] = bits[0]
+			}
 		}
 
 		request := &batch.SubmitRequest{

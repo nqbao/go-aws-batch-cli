@@ -8,18 +8,19 @@ import (
 	"github.com/aws/aws-sdk-go/service/batch"
 )
 
-// Simple wrapper of AWS SubmitJobInput
+// SubmitRequest simple wrapper of AWS SubmitJobInput
 type SubmitRequest struct {
 	Name        string
 	Queue       string
 	Definition  string
 	Command     []string
-	Parameters  map[string]*string
+	Parameters  map[string]string
 	Environment map[string]string
 	Timeout     int
 	Retries     int
 }
 
+// SetCommandString set batch command string
 func (s *SubmitRequest) SetCommandString(cmd string) {
 	if cmd == "" {
 		s.Command = nil
@@ -32,14 +33,10 @@ type BatchCli struct {
 	Session *session.Session
 }
 
-// SubmitJob submits a job to batch cli
-func (b *BatchCli) SubmitJob(request *SubmitRequest) (string, error) {
-	batchSvc := batch.New(b.Session)
-
+func (b *BatchCli) PrepareBatchSubmitInput(request *SubmitRequest) *batch.SubmitJobInput {
 	input := &batch.SubmitJobInput{
 		JobQueue:           aws.String(request.Queue),
 		JobDefinition:      aws.String(request.Definition),
-		Parameters:         request.Parameters,
 		ContainerOverrides: &batch.ContainerOverrides{},
 	}
 
@@ -64,7 +61,7 @@ func (b *BatchCli) SubmitJob(request *SubmitRequest) (string, error) {
 	}
 
 	if request.Name == "" {
-		input.JobName = aws.String("test")
+		input.JobName = aws.String(request.Definition)
 	} else {
 		input.JobName = aws.String(request.Name)
 	}
@@ -81,7 +78,22 @@ func (b *BatchCli) SubmitJob(request *SubmitRequest) (string, error) {
 		}
 	}
 
-	output, err := batchSvc.SubmitJob(input)
+	if request.Parameters != nil && len(request.Parameters) > 0 {
+		input.Parameters = map[string]*string{}
+
+		for k, v := range request.Parameters {
+			input.Parameters[k] = aws.String(v)
+		}
+	}
+
+	return input
+}
+
+// SubmitJob submits a job to batch cli
+func (b *BatchCli) SubmitJob(request *SubmitRequest) (string, error) {
+	batchSvc := batch.New(b.Session)
+
+	output, err := batchSvc.SubmitJob(b.PrepareBatchSubmitInput(request))
 
 	if err != nil {
 		return "", err
