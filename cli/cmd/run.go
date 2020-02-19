@@ -23,8 +23,9 @@ var (
 )
 
 var runCmd = &cobra.Command{
-	Use:  "run",
-	Args: cobra.ArbitraryArgs,
+	Use:   "run",
+	Short: "Run an AWS batch job",
+	Args:  cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		params := make(map[string]string)
 		envs := make(map[string]string)

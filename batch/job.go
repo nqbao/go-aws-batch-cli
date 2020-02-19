@@ -22,3 +22,16 @@ func (b *BatchCli) GetJob(jobID string) (*batch.JobDetail, error) {
 	job := out.Jobs[0]
 	return job, nil
 }
+
+func (b *BatchCli) CancelJob(jobID string) error {
+	batchSvc := batch.New(b.Session)
+
+	// TODO: support both cancel and terminate
+
+	_, err := batchSvc.CancelJob(&batch.CancelJobInput{
+		JobId:  aws.String(jobID),
+		Reason: aws.String("Requested by user"),
+	})
+
+	return err
+}

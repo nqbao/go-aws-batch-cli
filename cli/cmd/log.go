@@ -15,7 +15,8 @@ var (
 )
 
 var logCmd = &cobra.Command{
-	Use: "log",
+	Use:   "log",
+	Short: "View log of an existing job",
 	Run: func(cmd *cobra.Command, args []string) {
 		job, err := batchCli.GetJob(logJobId)
 

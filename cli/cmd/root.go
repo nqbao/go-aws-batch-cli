@@ -25,6 +25,7 @@ var (
 func init() {
 	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(logCmd)
+	rootCmd.AddCommand(cancelCmd)
 }
 
 func Execute() error {
