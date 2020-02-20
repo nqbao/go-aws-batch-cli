@@ -6,20 +6,23 @@ import (
 	"log"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/nqbao/go-aws-batch-cli/batch"
 	"github.com/spf13/cobra"
 )
 
 var (
-	runJobName       string
-	runJobQueue      string
-	runJobDefinition string
-	runJobParameters []string
-	runEnvironment   []string
-	runJobTimeout    int
-	runJobRetries    int
-	runFollowFlag    bool
-	runCommand       string
+	runJobName         string
+	runJobQueue        string
+	runJobDefinition   string
+	runJobParameters   []string
+	runEnvironment     []string
+	runJobTimeout      int
+	runJobRetries      int
+	runFollowFlag      bool
+	runCommand         string
+	runContainerMemory int
+	runContainerVcpus  int
 )
 
 var runCmd = &cobra.Command{
@@ -51,12 +54,14 @@ var runCmd = &cobra.Command{
 		}
 
 		request := &batch.SubmitRequest{
-			Name:        runJobName,
-			Definition:  runJobDefinition,
-			Queue:       runJobQueue,
-			Parameters:  params,
-			Environment: envs,
-			Retries:     runJobRetries,
+			Name:            runJobName,
+			Definition:      runJobDefinition,
+			Queue:           runJobQueue,
+			Parameters:      params,
+			Environment:     envs,
+			Retries:         runJobRetries,
+			ContainerMemory: runContainerMemory,
+			ContainerVcpus:  runContainerVcpus,
 		}
 
 		if runCommand != "" {
@@ -71,7 +76,7 @@ var runCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		fmt.Printf("Job ID: %s\n", jobID)
+		fmt.Printf("Job ID: %s\n", color.New(color.Bold).Sprint(jobID))
 
 		if runFollowFlag {
 			followJob(jobID)
@@ -88,6 +93,8 @@ func init() {
 	runCmd.Flags().StringArrayVarP(&runEnvironment, "env", "e", []string{}, "")
 	runCmd.Flags().IntVarP(&runJobTimeout, "timeout", "", 0, "Timeout")
 	runCmd.Flags().IntVarP(&runJobRetries, "num-retries", "r", 0, "Job retries")
+	runCmd.Flags().IntVarP(&runContainerMemory, "memory", "", 0, "Override container memory (in MiB)")
+	runCmd.Flags().IntVarP(&runContainerVcpus, "vcpus", "", 0, "Override container vcpus")
 	runCmd.Flags().BoolVarP(&runFollowFlag, "follow", "f", false, "Follow job log")
 
 	runCmd.MarkFlagRequired("queue")
@@ -98,20 +105,33 @@ func followJob(jobId string) {
 	follower := batchCli.FollowJob(jobId)
 
 	running := true
+	success := false
+
+	// TODO: add a message when a new attempt is started
 	for running {
 		select {
 		case msg := <-follower.Logging:
 			fmt.Println(msg)
 
 		case status := <-follower.Status:
-			fmt.Printf("Status: %v\n", status)
+			fmt.Println(color.CyanString("[Status]"), status)
+
+			if status == "SUCCEEDED" {
+				success = true
+			}
 
 		case err := <-follower.Error:
 			if err != io.EOF {
-				fmt.Printf("Error: %v", err)
+				fmt.Println(color.RedString("[Error]"), err)
 			}
 
 			running = false
 		}
+	}
+
+	if success {
+		fmt.Println(color.BlueString("Job has completed successfully!"))
+	} else {
+		fmt.Println(color.RedString("Job has failed."))
 	}
 }

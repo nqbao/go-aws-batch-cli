@@ -10,14 +10,16 @@ import (
 
 // SubmitRequest simple wrapper of AWS SubmitJobInput
 type SubmitRequest struct {
-	Name        string
-	Queue       string
-	Definition  string
-	Command     []string
-	Parameters  map[string]string
-	Environment map[string]string
-	Timeout     int
-	Retries     int
+	Name            string
+	Queue           string
+	Definition      string
+	Command         []string
+	Parameters      map[string]string
+	Environment     map[string]string
+	Timeout         int
+	Retries         int
+	ContainerMemory int
+	ContainerVcpus  int
 }
 
 // SetCommandString set batch command string
@@ -38,6 +40,14 @@ func (b *BatchCli) PrepareBatchSubmitInput(request *SubmitRequest) *batch.Submit
 		JobQueue:           aws.String(request.Queue),
 		JobDefinition:      aws.String(request.Definition),
 		ContainerOverrides: &batch.ContainerOverrides{},
+	}
+
+	if request.ContainerMemory > 0 {
+		input.ContainerOverrides.Memory = aws.Int64(int64(request.ContainerMemory))
+	}
+
+	if request.ContainerVcpus > 0 {
+		input.ContainerOverrides.Vcpus = aws.Int64(int64(request.ContainerVcpus))
 	}
 
 	if request.Timeout > 0 {

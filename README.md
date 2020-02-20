@@ -23,7 +23,7 @@ You can also use `-f` to follow the log stream
 To override the container command
 
 ```
-./build/aws-batch-cli run -j job-definition -q queue-name -p param1=value1 -p param2=value -f -- my container command
+./build/aws-batch-cli run -j job-definition -q queue-name -f -- my container command
 ```
 
 **View log of an existing job**
