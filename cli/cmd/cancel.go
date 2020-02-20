@@ -8,35 +8,25 @@ import (
 )
 
 var (
-	cancelJobId string
+	cancelJobID string
 )
 
 var cancelCmd = &cobra.Command{
 	Use:   "cancel",
 	Short: "Cancel a running job",
 	Run: func(cmd *cobra.Command, args []string) {
-		job, err := batchCli.GetJob(cancelJobId)
-
-		if err != nil {
-			log.Fatalf("Can not find job: %v", err)
-		}
-
-		if *job.Status == "SUCCEEDED" || *job.Status == "FAILED" {
-			log.Fatalf("Invalid job status: %v", *job.Status)
-		}
-
-		err = batchCli.CancelJob(*job.JobId)
+		err := batchCli.CancelJob(cancelJobID)
 		if err != nil {
 			log.Fatalf("Unable to cancel job: %v", err)
 		} else {
-			fmt.Printf("Job %v is cancelled!\n", cancelJobId)
+			fmt.Printf("Job %v is cancelled!\n", cancelJobID)
 
-			// TODO: wait until it is really cancelled
+			// TODO: add flag to wait until the job is really cancel
 		}
 	},
 }
 
 func init() {
-	cancelCmd.Flags().StringVarP(&cancelJobId, "id", "i", "", "Job ID")
+	cancelCmd.Flags().StringVarP(&cancelJobID, "id", "i", "", "Job ID")
 	cancelCmd.MarkFlagRequired("id")
 }

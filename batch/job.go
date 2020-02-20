@@ -2,9 +2,14 @@ package batch
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/batch"
+)
+
+var (
+	DefaultCancelReason = "Requested by user"
 )
 
 func (b *BatchCli) GetJob(jobID string) (*batch.JobDetail, error) {
@@ -26,12 +31,27 @@ func (b *BatchCli) GetJob(jobID string) (*batch.JobDetail, error) {
 func (b *BatchCli) CancelJob(jobID string) error {
 	batchSvc := batch.New(b.Session)
 
-	// TODO: support both cancel and terminate
+	job, err := b.GetJob(jobID)
 
-	_, err := batchSvc.CancelJob(&batch.CancelJobInput{
-		JobId:  aws.String(jobID),
-		Reason: aws.String("Requested by user"),
-	})
+	if err != nil {
+		return fmt.Errorf("Unable to find job: %v", err)
+	}
+
+	if *job.Status == "SUCCEEDED" || *job.Status == "FAILED" {
+		return fmt.Errorf("Invalid job status: %v", *job.Status)
+	}
+
+	if *job.Status == "STARTING" || *job.Status == "RUNNING" {
+		_, err = batchSvc.TerminateJob(&batch.TerminateJobInput{
+			JobId:  job.JobId,
+			Reason: aws.String(DefaultCancelReason),
+		})
+	} else {
+		_, err = batchSvc.CancelJob(&batch.CancelJobInput{
+			JobId:  job.JobId,
+			Reason: aws.String(DefaultCancelReason),
+		})
+	}
 
 	return err
 }
