@@ -29,12 +29,12 @@ To override the container command
 **View log of an existing job**
 
 ```
-./build/aws-batch-cli log -i abcdef
+./build/aws-batch-cli log -i job-id
 ```
 
 ## TODO
 
  - [ ] Describe a job
- - [ ] Cancel a job
+ - [x] Cancel a job
  - [ ] Rerun a job
  - [ ] Automate job building and packaging

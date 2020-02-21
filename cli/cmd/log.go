@@ -25,24 +25,24 @@ var logCmd = &cobra.Command{
 		}
 
 		if *job.Status != "SUCCEEDED" && *job.Status != "FAILED" {
-			log.Fatalf("Invalid job status: %v", *job.Status)
-		}
+			followJob(logJobId)
+		} else {
+			attempt := job.Attempts[len(job.Attempts)-1]
 
-		attempt := job.Attempts[len(job.Attempts)-1]
+			follower := batch.FollowCloudWatchLog(awsSession, "/aws/batch/job", *attempt.Container.LogStreamName, false)
 
-		follower := batch.FollowCloudWatchLog(awsSession, "/aws/batch/job", *attempt.Container.LogStreamName, false)
+			running := true
+			for running {
+				select {
+				case msg := <-follower.Out:
+					fmt.Println(msg)
+				case err := <-follower.Error:
+					if err != io.EOF {
+						log.Fatalf("Error while retriving log stream: %v", err)
+					}
 
-		running := true
-		for running {
-			select {
-			case msg := <-follower.Out:
-				fmt.Println(msg)
-			case err := <-follower.Error:
-				if err != io.EOF {
-					log.Fatalf("Error while retriving log stream: %v", err)
+					running = false
 				}
-
-				running = false
 			}
 		}
 	},
